@@ -180,19 +180,22 @@ INNER JOIN Salesman S2 ON S1.City = S2.City AND S1.Salesman_Number < S2.Salesman
 -- 1 Display the clients (name) who lives in same city.
 SELECT client_name from clients where city in (SELECT city from clients GROUP BY city HAVING count(city) >=2)
 ORDER BY city;
+
 -- 2 Display city, the client names and salesman names who are lives in “Thu Dau Mot” city.
 SELECT client_name, c.city from clients c inner join salesman s on c.city = s.city where c.city = 'Thu Dau Mot';
+
 -- 3 Display  client  name,  client  number,  order  number,  salesman  number,  and  product  number  for  each  order.
 SELECT c.client_Name, c.client_Number, so.order_number, so.salesman_number, sod.product_number from clients c 
 INNER JOIN salesorder so on c.client_number = so.client_number
 INNER JOIN salesorderdetails sod ON so.Order_Number = sod.Order_Number;
+
 -- 4 Find each order (client_number, client_name, order_number) placed by each client.
 SELECT c.client_number, client_name, order_number from clients c LEFT JOIN salesorder on c.client_number = c.client_number;
+
 -- 5 Display the details of clients (client_number, client_name) and the number of orders which is paid by them. 
 SELECT c.client_number, c.client_name, COUNT(so.order_number) AS Order_Count from clients c
 left join salesorder so on c.client_number = so.client_number
 GROUP BY C.Client_Number, C.Client_Name;
-
 
 -- 6 Display the details of clients (client_number, client_name) who have paid for more than 2 orders.
 SELECT c.client_number, c.client_name , COUNT(so.order_number) AS Order_Count from clients c
@@ -207,14 +210,12 @@ GROUP BY c.client_number, c.client_name
 HAVING COUNT(so.order_number) > 1
 ORDER BY c.client_number DESC;
 
-
 -- 8  Find the salesman names who sells more than 20 products.
 SELECT s.salesman_name , SUM(sod.order_quantity) from salesman s 
 inner join salesorder od on s.salesman_number = od.salesman_number
 inner join salesorderdetails sod on  od.order_number = sod.order_number
 GROUP BY s.salesman_name
 HAVING (SUM(sod.order_quantity)) > 20;
-
 
 -- 9 Display  the  client  information  (client_number,  client_name)  and  order  number  of  those  clients  who have order status is cancelled.
 SELECT c.client_number,  c.client_name , so.order_number from clients c inner join salesorder so
@@ -226,12 +227,10 @@ on c.client_number = so.client_number AND so.order_status = 'successful'
 where c.client_number = 'C101'
 GROUP BY c.client_name, c.client_number;
 
-
 -- 11 Count the number of clients orders placed for each product
 SELECT p.product_name, p.product_number, COUNT(sod.order_number) from product p
 inner JOIN salesorderdetails sod on p.product_number = sod.product_number
 GROUP BY p.product_name, p.product_number;
-
 
 -- 12 Find product numbers that were ordered by more than two clients then order in descending by product number.
 SELECT sod.product_number from salesorderdetails sod
@@ -240,16 +239,29 @@ GROUP BY sod.product_number
 HAVING count(DISTINCT so.client_number) > 2
 ORDER BY sod.product_number DESC;
 
+-- 13. Find the salesman's names who is getting the second highest salary (fully nested query).
+SELECT Salesman_Name, Salary
+FROM Salesman
+WHERE Salary = (
+    SELECT MAX(Salary)
+    FROM Salesman
+    WHERE Salary < (
+        SELECT MAX(Salary)
+        FROM Salesman
+    )
+);
 
-
--- 13 Find the salesman’s names who is getting the second highest salary.
-SELECT salesman_name,salary from salesman WHERE salary not in (SELECT MAX(salary) from salesman) ORDER BY salary DESC limit 1;
-
-
-
--- 14 Find the salesman’s names who is getting second lowest salary.
-SELECT salesman_name,salary from salesman WHERE salary not in (SELECT min(salary) from salesman) ORDER BY salary ASC limit 1;
-
+-- 14. Find the salesman's names who is getting second lowest salary (fully nested query).
+SELECT Salesman_Name, Salary
+FROM Salesman
+WHERE Salary = (
+    SELECT MIN(Salary)
+    FROM Salesman
+    WHERE Salary > (
+        SELECT MIN(Salary)
+        FROM Salesman
+    )
+);
 
 -- 15 Write  a  query  to  find  the  name  and  the  salary  of  the  salesman  who  have  a  higher  salary  than  the salesman whose salesman number is S001.
 SELECT Salesman_Name, Salary
@@ -260,7 +272,6 @@ WHERE Salary > (SELECT Salary FROM Salesman WHERE Salesman_Number = 'S001');
 SELECT DISTINCT s.salesman_name from salesman s inner join salesorder so on s.salesman_number = so.salesman_number 
 inner join salesorderdetails sod on so.order_number = sod.order_number
 where sod.product_number = 'P1002';
-
 
 -- 17.  Find the name of the salesman who sold the product to client C108 with delivery status is “delivered”. 
 SELECT s.salesman_name from salesman s inner join salesorder so on s.salesman_number = so.salesman_number 
@@ -359,11 +370,17 @@ SELECT Salesman_Name, Salary
 FROM Salesman
 WHERE Salary = (SELECT MAX(Salary) FROM Salesman);
 
--- 31. Find salary and the salesman's names who is getting second lowest salary.
+-- 31. Find salary and the salesman's names who is getting second lowest salary (using nested query).
 SELECT Salesman_Name, Salary
 FROM Salesman
-ORDER BY Salary ASC
-LIMIT 1 OFFSET 1;
+WHERE Salary = (
+    SELECT MIN(Salary)
+    FROM Salesman
+    WHERE Salary > (
+        SELECT MIN(Salary)
+        FROM Salesman
+    )
+);
 
 -- 32. Display lists the ProductName in ANY records in the sale Order Details table has Order Quantity more than 9.
 SELECT DISTINCT P.Product_Name
@@ -395,15 +412,31 @@ WHERE S.Salary > ALL (
 )
 ORDER BY S.Salary ASC;
 
--- 36. Write a query to find the 4th maximum salary on the salesman's table.
-SELECT DISTINCT Salary
+-- 36. Write a query to find the 4th maximum salary on the salesman's table (fully nested query).
+SELECT MAX(Salary)
 FROM Salesman
-ORDER BY Salary DESC
-LIMIT 1 OFFSET 3;
+WHERE Salary < (
+    SELECT MAX(Salary)
+    FROM Salesman
+    WHERE Salary < (
+        SELECT MAX(Salary)
+        FROM Salesman
+        WHERE Salary < (
+            SELECT MAX(Salary)
+            FROM Salesman
+        )
+    )
+);
 
--- 37. Write a query to find the 3rd minimum salary in the salesman's table.
-SELECT DISTINCT Salary
+-- 37. Write a query to find the 3rd minimum salary in the salesman's table (fully nested query).
+SELECT MIN(Salary)
 FROM Salesman
-ORDER BY Salary ASC
-LIMIT 1 OFFSET 2;
+WHERE Salary > (
+    SELECT MIN(Salary)
+    FROM Salesman
+    WHERE Salary > (
+        SELECT MIN(Salary)
+        FROM Salesman
+    )
+);
 
